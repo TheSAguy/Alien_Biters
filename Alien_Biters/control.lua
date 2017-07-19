@@ -13,6 +13,15 @@ local QC_Mod = true
 
 
 
+local waterTiles =
+{
+  ["deepwater"] = true,
+  ["deepwater-green"] = true,
+  ["water"] = true,
+  ["water-green"] = true,
+  ["out-of-map"] = true
+}
+
 
 ---------------------------------------------				 
 function on_initialize()
@@ -51,6 +60,8 @@ function on_initialize()
 		end
 
 		global.Alien.lords = Initial_Spawn(surface)
+		
+
 		--global.Alien.lords = tester2(surface)
 		
 		
@@ -66,58 +77,104 @@ local function On_Death(event)
 end
 
 
-
-
+local counter = 0
 Event.register(defines.events.on_tick, function(event)	
 
-
+	
     if (event.tick % 440 == 0) then
 		
-		chart_radius = 10
-		local counts = global.Initial_Aliens.count
-		local InitialIndex = 1
 		
-		repeat
+		
+		if counter < 10 then
+		
+			local chart_radius = 10
+			local counts = global.Initial_Aliens.count
+			local InitialIndex = 1
+			local radius = 10
+			local pos = global.Initial_Aliens.count.positions
 			
-			local count = counts[InitialIndex]
-		
-			if (count ~= nil) and (count.valid) then
-		
-			writeDebug("HA")
-			writeDebug(#counts)
-			writeDebug(InitialIndex)
-			end
+			repeat
+				
+				local count = counts[InitialIndex]		
+				local target = nil
+					
+				if (count ~= nil) and (count.valid) then
+					local surface = count.surface			
+					local pos = count.position
+					local currentTilename = surface.get_tile(pos.x,pos.y).name
+				
+					
+					writeDebug(currentTilename)
+					
+					--if waterTiles[currentTilename] then
+					--	count.destroy()
+					--end
+
+					for _,force in pairs( game.forces )do
+						force.chart( surface, {{x = count.position.x - chart_radius, y = count.position.y - chart_radius}, {x = count.position.x, y = count.position.y}})
+					end	
+					
+					local radius = radius + (20 * game.forces.enemy.evolution_factor)
+					local area = {{pos.x - radius, pos.y - radius}, {pos.x + radius, pos.y + radius}}
+					local spawner = surface.find_entities_filtered({area = area, type = "unit-spawner", force= "enemy"})
+					
+					if #spawner > 0 and not waterTiles[currentTilename] then
+					writeDebug("Found a Spawner to attack")
+						
+						for _,enemy in pairs(spawner) do
+							if target == nil then
+								target={enemy}
+							end
+						end
+					
+					end			
+					if (target ~= nil) and (count ~= nil) and (count.valid) then
+						
+						count.set_command({type = defines.command.attack, target = target[1]})
+						
+					else
+						count.set_command({type = defines.command.wander})
+						radius = radius + 2
+					end
+				
+				
+				else
+					writeDebug("found invalid one")
+				end
+				
 			
+				InitialIndex = InitialIndex + 1
+			until (InitialIndex >= #counts)
 		
-			InitialIndex = InitialIndex + 1
-		until (InitialIndex >= #counts)
-	
-		--[[
-		
-		for i = 1, #global.Initial_Aliens.count do
-		writeDebug(global.Initial_Aliens.count)
-		
-		
-			if global.Initial_Aliens.count.valid and global.Initial_Aliens ~= nil then
-			writeDebug("Was Valid")
-			global.Initial_Aliens.count.set_autonomous()
+			--[[
 			
-			end
-			
-			local surface = game.surfaces['nauvis']
-			for _,force in pairs( game.forces )do
-				force.chart( surface, {{x = global.Initial_Aliens.position.x - chart_radius, y = global.Initial_Aliens.position.y - chart_radius}, {x = global.Initial_Aliens.position.x, y = global.Initial_Aliens.position.y}})
-			end		
+			for i = 1, #global.Initial_Aliens.count do
+			writeDebug(global.Initial_Aliens.count)
 			
 			
-			--global.Initial_Aliens.set_command(defines.command.wander)
+				if global.Initial_Aliens.count.valid and global.Initial_Aliens ~= nil then
+				writeDebug("Was Valid")
+				global.Initial_Aliens.count.set_autonomous()
+				
+				end
+				
+				local surface = game.surfaces['nauvis']
+				for _,force in pairs( game.forces )do
+					force.chart( surface, {{x = global.Initial_Aliens.position.x - chart_radius, y = global.Initial_Aliens.position.y - chart_radius}, {x = global.Initial_Aliens.position.x, y = global.Initial_Aliens.position.y}})
+				end		
+				
+				
+				--global.Initial_Aliens.set_command(defines.command.wander)
+				
+				end
 			
-			end
-		
-		end 
-		]]
+			end 
+			]]
+			counter = counter + 1
+		end	
     end
 end)
+
 
 
 

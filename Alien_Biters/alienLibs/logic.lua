@@ -592,7 +592,7 @@ function raisealien(event, Alien, surface)
 			if event.cause and event.cause.force.name == "alien" then
 				
 			-- The Evolution Factor gets affected when the Aliens kill nests, so I'm counteracting that here.	
-				writeDebug("Alien killed an Enemy Spawner")
+				--writeDebug("Alien killed an Enemy Spawner, so reduce the Evolution")
 				game.forces.enemy.evolution_factor = game.forces.enemy.evolution_factor - (game.map_settings.enemy_evolution.destroy_factor * (1-game.forces.enemy.evolution_factor)^2)	
 
 				local causeName = event.cause.name
@@ -645,12 +645,13 @@ function raisealien(event, Alien, surface)
 			
 		elseif Death_Action[AlienName] == 'Breed_Swarm' then
 		
+			writeDebug("Breed & Swarm")
 			Spawn_Nest(event)
 			Alien_Swarm(event)
 			
 		else
 		
-			writeDebug("Not in Death_Action table")
+			--writeDebug("Not in Death_Action table")
 			
 		end
 		
@@ -678,9 +679,15 @@ end
 
 function Spawn_Nest(event)
 
-	local SpawnAlienPosition = event.entity.surface.find_non_colliding_position(event.entity.name, event.entity.position, 2 , 0.5)
-	if SpawnAlienPosition then
+	local SpawnAlienPosition = event.entity.surface.find_non_colliding_position(event.entity.name, event.entity.position, 4 , 0.5)
+	local CanSpawn = surface.can_place_entity({ name="alien-den", position=SpawnAlienPosition, force = game.forces.alien})
+	
+	if CanSpawn then
+		
+		
 		local new_nest = event.entity.surface.create_entity({name = "alien-den", position = SpawnAlienPosition, force = "alien"})
+		
+		
 		--table.insert(global.Total_Nest_Count, new_nest)
 		writeDebug("An Alien Nest Spawned")	
 		-- Add the created nest to the table
@@ -689,7 +696,10 @@ function Spawn_Nest(event)
 		for _,force in pairs( game.forces )do
 			force.chart( surface, {{x = SpawnAlienPosition.x - 10, y = SpawnAlienPosition.y - 10}, {x = SpawnAlienPosition.x, y = SpawnAlienPosition.y}})
 		end		
-		
+	else
+
+		writeDebug("Failed to find a Nest spawn location!")
+	
 	end
 			
 end
@@ -813,7 +823,7 @@ function moveclans(Alien, surface)
 
     local clans = Alien.clans
     local clanIndex = 1
-	writeDebug("Trying to move clans")
+	--writeDebug("Trying to move clans")
     --[[
 	repeat
         local clan = clans[clanIndex]
@@ -849,9 +859,7 @@ function moveclans(Alien, surface)
 		local target = nil
         if (clan ~= nil) and (clan.valid) then
 
-            local radius = 10 + 20 * game.forces.enemy.evolution_factor
-            local closestDistance = -1
-            local closestSpawner = nil			
+            local radius = 10 + 20 * game.forces.enemy.evolution_factor	
 			local pos = clan.position		
 			local area = {{pos.x - radius, pos.y - radius}, {pos.x + radius, pos.y + radius}}
 			local spawner = clan.surface.find_entities_filtered({area = area, type = "unit-spawner", force= "enemy"})

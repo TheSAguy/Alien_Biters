@@ -142,8 +142,16 @@ for i = 1, 100 do
     alien_army.max_health = health[i]
 	alien_army.corpse = "alien-corpse-" .. i
 	alien_army.attack_parameters.ammo_type.action.action_delivery.target_effects.damage = damage_amount[i]
-	alien_army.attack_parameters.animation = biterattackanimation(alien_scale[i], alien_tint1[i], alien_tint2[i])
-	alien_army.run_animation = biterrunanimation(alien_scale[i], alien_tint1[i], alien_tint2[i])
+	
+	if i <= 9 then
+		alien_army.run_animation = spitterrunanimation(alien_scale[i], alien_tint1[i], alien_tint2[i])
+		alien_army.attack_parameters.animation = biterattackanimation(alien_scale[i], alien_tint1[i], alien_tint2[i])
+	else
+		alien_army.run_animation = biterrunanimation(alien_scale[i], alien_tint1[i], alien_tint2[i])
+		alien_army.attack_parameters.animation = biterattackanimation(alien_scale[i], alien_tint1[i], alien_tint2[i])
+	end
+	
+	
 
     data:extend{alien_army}
 end

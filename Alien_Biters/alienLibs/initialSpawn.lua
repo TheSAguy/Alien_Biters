@@ -6,6 +6,25 @@ local waterTiles =
   ["water-green"] = true
 }
 
+function Random_Position(surface)
+			local surface = surface
+			local pos_x = math.random(-(spawn_zone+Scatter),(spawn_zone+Scatter))
+			local pos_y = math.random(-(spawn_zone+Scatter),(spawn_zone+Scatter))
+			
+			if pos_x < 0 then 
+				pos_x = pos_x - radius_from_player
+			else
+				pos_x = pos_x + radius_from_player
+			end
+			if pos_y < 0 then 
+				pos_y = pos_y - radius_from_player
+			else
+				pos_y = pos_y + radius_from_player
+			end
+			position = {pos_x, pos_y}
+			
+	return position
+end
 
 
 function Initial_Spawn(surface)
@@ -16,8 +35,8 @@ function Initial_Spawn(surface)
 	local chart_radius = 10
 	local radius_from_player = settings.startup["Alien_Distance"].value
 	
-	for i = 1, settings.startup["Alien_Count"].value do 
-	--while Nest_Spawned < settings.startup["Alien_Count"].value do
+	--for i = 1, settings.startup["Alien_Count"].value do 
+	while Nest_Spawned < settings.startup["Alien_Count"].value do
 		
 		local surface = surface
 		local pos_x = math.random(-(spawn_zone+Scatter),(spawn_zone+Scatter))
@@ -42,14 +61,18 @@ function Initial_Spawn(surface)
 					
 			local lords = surface.create_entity({name="alien-army-26", position={pos_x, pos_y},force = game.forces.alien})	
 			--global.Initial_Aliens[i] = lords
-			global.Initial_Aliens.count[i] = lords
+			
+			Nest_Spawned = Nest_Spawned + 1
+			global.Initial_Aliens.count[Nest_Spawned] = lords
+			
 			--[[
+			--Reveal spawned unit
 			for _,force in pairs( game.forces )do
 				force.chart( surface, {{x = pos_x - chart_radius, y = pos_y - chart_radius}, {x = pos_x, y = pos_y}})
 			end			
 			]]
 			
-			Nest_Spawned = Nest_Spawned + 1
+			
 			Scatter = Scatter + 100
 		else 
 		
