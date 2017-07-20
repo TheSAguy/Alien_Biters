@@ -1,3 +1,7 @@
+---- Initial Spawn of Alien Units. 
+---- Able to set how many crash landed via Settings.
+
+--- Water tiles in game
 local waterTiles =
 {
   ["deepwater"] = true,
@@ -6,25 +10,6 @@ local waterTiles =
   ["water-green"] = true
 }
 
-function Random_Position(surface)
-			local surface = surface
-			local pos_x = math.random(-(spawn_zone+Scatter),(spawn_zone+Scatter))
-			local pos_y = math.random(-(spawn_zone+Scatter),(spawn_zone+Scatter))
-			
-			if pos_x < 0 then 
-				pos_x = pos_x - radius_from_player
-			else
-				pos_x = pos_x + radius_from_player
-			end
-			if pos_y < 0 then 
-				pos_y = pos_y - radius_from_player
-			else
-				pos_y = pos_y + radius_from_player
-			end
-			position = {pos_x, pos_y}
-			
-	return position
-end
 
 
 function Initial_Spawn(surface)
@@ -57,14 +42,21 @@ function Initial_Spawn(surface)
 		
 		--local currentTilename = game.surfaces[1].get_tile(pos_x,pos_y).name
 		
+		-- Still having an issue here, Aliens are still spwaning in water tiles. Thought 
+		-- I'd fix this issue by looking if the tile was a water tile and then preventing the spawn, 
+		-- but could not get "get_tile" to work
+		
 		if surface.can_place_entity({ name="alien-army-26", position={pos_x, pos_y}, force = game.forces.alien}) then --and not waterTiles[currentTilename] then
 					
 			local lords = surface.create_entity({name="alien-army-26", position={pos_x, pos_y},force = game.forces.alien})	
 			--global.Initial_Aliens[i] = lords
 			
 			Nest_Spawned = Nest_Spawned + 1
-			global.Initial_Aliens.count[Nest_Spawned] = lords
-			
+			--global.Initial_Aliens[i] = lords
+			global.Initial_Aliens.count[Nest_Spawned] = lords -- I keep track of the initial units spawned, since I want to give them orders in the beginning of the game.
+			-- I could propably use "lords" instead of keeping track of it by itself...
+		
+			-- QC to look at spawned units.
 			--[[
 			--Reveal spawned unit
 			for _,force in pairs( game.forces )do

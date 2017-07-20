@@ -2,7 +2,7 @@
 require "alienUtils"
 
 
-
+-- I have 5 tables below to help me determine certain actions. Can probably be optimized.
 -- Upgrade Elegable
 local ValidUpgrade = 
 {
@@ -323,7 +323,8 @@ local Alien_Upgrade_from_killing_Spawner =
 }
 
 
-local Death_Action = {
+local Death_Action = 
+{
 
 ["alien-den"] ="Swarm",
 ["alien-army-1"] ="Nothing",
@@ -430,7 +431,8 @@ local Death_Action = {
 }
 
 
-local Swarm_Count = {
+local Swarm_Count = 
+{
 
 ["alien-den"] = 5,
 ["alien-army-1"] = 0,
@@ -537,6 +539,9 @@ local Swarm_Count = {
 }
 
 ------------------------------
+-- So when an Alien kills a Enemy unit, the unit that does get raised as a alien unit and the Alien that did the killing also gets upgraded.
+-- One thing that I don't know how to do is remove units form "lords"
+-- Also, newly spawned units, from Spawners are not added. I don't think it's a big issue though.
 
 function raisealien(event, Alien, surface)
    
@@ -550,7 +555,7 @@ function raisealien(event, Alien, surface)
 	
 
 
-		--- If an Unit get's killed
+		--- If an Enemy Unit get's killed
 		if (entityType == "unit") then		
 			
 			local risen = surface.create_entity({name = "alien-army-1", position = risenPosition, force = "alien"})
@@ -620,7 +625,7 @@ function raisealien(event, Alien, surface)
 	
 	end
 
-	---- If an Alien unit dies
+	---- If an Alien unit dies, what should happen:
     if (event.force ~= nil)  and (entityType == "unit")  and (event.entity.force.name == "alien") then 
 			
 		--writeDebug("A alien Died")	
@@ -668,7 +673,7 @@ function raisealien(event, Alien, surface)
     return Alien
 end
 
-
+--- Need to improve my Explosions :)
 function Explosion(event)
 
 	local Acid_Explosion_Position = event.entity.position
@@ -676,12 +681,13 @@ function Explosion(event)
 		
 end
 
-
+--- TO DO: possibly have different nests, depending on Evolution factor.
 function Spawn_Nest(event)
 
 	local SpawnAlienPosition = event.entity.surface.find_non_colliding_position(event.entity.name, event.entity.position, 4 , 0.5)
 	local CanSpawn = surface.can_place_entity({ name="alien-den", position=SpawnAlienPosition, force = game.forces.alien})
-	
+
+	--- Not sure how to prevent not getting a location that can't be used to spawn a spawner...
 	if CanSpawn then
 		
 		
@@ -705,7 +711,7 @@ function Spawn_Nest(event)
 end
 
 
--- Swarn the Alien that died
+-- Swarn Larva  Aliens when an Alien dieds
 function Alien_Swarm(event)
 	local AlienName = event.entity.name
 	--writeDebug("Alien Name: "..AlienName) 
@@ -724,7 +730,7 @@ end
 
 
 
---[[
+--[[ Was using this before, not currently being used...
 function Remove_Nest(index)
 
   if index then
@@ -749,6 +755,7 @@ end
 
 ]]
 
+-- This is all your code!
 function formclans(Alien, surface)
 
     local freeAliens = Alien.freeAliens
@@ -823,7 +830,8 @@ function moveclans(Alien, surface)
 
     local clans = Alien.clans
     local clanIndex = 1
-	--writeDebug("Trying to move clans")
+	--writeDebug("Moving clan")
+	-- Will add the below back, will first look for players, then enemy units.
     --[[
 	repeat
         local clan = clans[clanIndex]

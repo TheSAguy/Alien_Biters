@@ -3,6 +3,7 @@ require "alienLibs/initialSpawn"
 require "alienLibs/logic"
 
 
+-- added a little support for EvoGUI
 if remote.interfaces.EvoGUI then
 	require "alienLibs/EvoGUI"
 end
@@ -12,7 +13,7 @@ end
 local QC_Mod = true
 
 
-
+-- Again, thought of using this to kill units that spawend on water.
 local waterTiles =
 {
   ["deepwater"] = true,
@@ -54,6 +55,7 @@ function on_initialize()
 			global.Total_Nest_Count = 0
 		end
 
+		--- the below should probably just be replaced with "lords", but could not get that to work.
 		if global.Initial_Aliens == nil then
 			global.Initial_Aliens  = {}
 			global.Initial_Aliens.count = {} 
@@ -77,6 +79,17 @@ local function On_Death(event)
 end
 
 
+-- So, the idea here was to keep giving the initial units orders. Have them look for enemies to attack. 
+-- Else they would just be dormant till the player gets close and since they are going to be spawned a very long way from the player...
+-- they could be dormant for a long time. By having then move/attack they will be a much bigger threat once the player gets closer.
+
+-- The below code is a little shotty.. Still not entirely understanding what is stored in the tables. That's why I used the 
+-- seperate table to keep track of the initial units, instead of the lords table.
+ -- I'm not sure how to remove dead units from the "global.Initial_Aliens.count" table.
+ -- again, i think if I switch to global.Alien.lords it might slove some stuff.....
+ 
+-- Was thinking of to move the initial units (should probably include newly formed clans also) every 10 min, for maybe 10 times.
+-- then leave them till the player shows us. Or maybe just increase the time between moves to maybe make it incrimental 5, 10, 15....
 local counter = 0
 Event.register(defines.events.on_tick, function(event)	
 
@@ -105,7 +118,7 @@ Event.register(defines.events.on_tick, function(event)
 				
 					
 					writeDebug(currentTilename)
-					
+					-- Was trying to kill units spawned in water, could not get that to work.
 					--if waterTiles[currentTilename] then
 					--	count.destroy()
 					--end
@@ -145,31 +158,7 @@ Event.register(defines.events.on_tick, function(event)
 			
 				InitialIndex = InitialIndex + 1
 			until (InitialIndex >= #counts)
-		
-			--[[
-			
-			for i = 1, #global.Initial_Aliens.count do
-			writeDebug(global.Initial_Aliens.count)
-			
-			
-				if global.Initial_Aliens.count.valid and global.Initial_Aliens ~= nil then
-				writeDebug("Was Valid")
-				global.Initial_Aliens.count.set_autonomous()
-				
-				end
-				
-				local surface = game.surfaces['nauvis']
-				for _,force in pairs( game.forces )do
-					force.chart( surface, {{x = global.Initial_Aliens.position.x - chart_radius, y = global.Initial_Aliens.position.y - chart_radius}, {x = global.Initial_Aliens.position.x, y = global.Initial_Aliens.position.y}})
-				end		
-				
-				
-				--global.Initial_Aliens.set_command(defines.command.wander)
-				
-				end
-			
-			end 
-			]]
+
 			counter = counter + 1
 		end	
     end
