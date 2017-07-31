@@ -96,15 +96,24 @@ Event.register(defines.events.on_tick, function(event)
 	
     if (event.tick % 440 == 0) then
 		
-		
-		
+	-- Veden Note:
+	-- not sure of the purpose of this counter loop
+	
 		if counter < 10 then
-		
+
+		    -- Veden Note:
+		    -- doing this expanding radius is a bad idea within the on_tick as it is computationally intensive
+		    -- and I'm not sure why a single call at the max radius wouldn't suffice
+
 			local chart_radius = 10
 			local counts = global.Initial_Aliens.count
 			local InitialIndex = 1
 			local radius = 10
 			local pos = global.Initial_Aliens.count.positions
+
+			-- Veden Note:
+			-- instead of doing all the counts at once, only do a fixed set and store were you leave off in global and start back up there. Once the stored index reaches the
+			-- max size start it back at 1
 			
 			repeat
 				
@@ -114,6 +123,8 @@ Event.register(defines.events.on_tick, function(event)
 				if (count ~= nil) and (count.valid) then
 					local surface = count.surface			
 					local pos = count.position
+					-- Veden Note:
+					-- not sure why this is needed
 					local currentTilename = surface.get_tile(pos.x,pos.y).name
 				
 					
@@ -123,14 +134,22 @@ Event.register(defines.events.on_tick, function(event)
 					--	count.destroy()
 					--end
 
+					-- Veden Note:
+					-- this is something that is going to be very expensive for lots of units. You may be better off figuring out a fixed point that is their home
+					-- and chart a radius around that once and keep the spread within that radius.
 					for _,force in pairs( game.forces )do
 						force.chart( surface, {{x = count.position.x - chart_radius, y = count.position.y - chart_radius}, {x = count.position.x, y = count.position.y}})
 					end	
 					
 					local radius = radius + (20 * game.forces.enemy.evolution_factor)
 					local area = {{pos.x - radius, pos.y - radius}, {pos.x + radius, pos.y + radius}}
+					-- Veden Note:
+					-- find_nearest_enemy is more efficient than find_entities_filtered
 					local spawner = surface.find_entities_filtered({area = area, type = "unit-spawner", force= "enemy"})
-					
+
+					-- Veden Note:
+					-- Not sure for the water tile check.
+					-- why the loop, currently it loops through all the spawners and builds tables for each, but only actually uses the last one
 					if #spawner > 0 and not waterTiles[currentTilename] then
 					writeDebug("Found a Spawner to attack")
 						
@@ -146,8 +165,11 @@ Event.register(defines.events.on_tick, function(event)
 						count.set_command({type = defines.command.attack, target = target[1]})
 						
 					else
-						count.set_command({type = defines.command.wander})
-						radius = radius + 2
+					    count.set_command({type = defines.command.wander})
+
+					    -- Veden Note:
+					    -- Why are you increasing the radius?
+						radius = radius + 2 
 					end
 				
 				
