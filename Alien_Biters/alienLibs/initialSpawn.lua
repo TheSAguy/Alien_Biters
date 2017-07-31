@@ -1,6 +1,35 @@
 ---- Initial Spawn of Alien Units. 
 ---- Able to set how many crash landed via Settings.
 
+
+-- Veden Note:
+-- anytime you have lots of constant getting repeating in files they should be all pulled into a single file
+-- and have modules built from them to centralize there management. Below is a small demo for doing modules.
+
+-- this is a file called file1.lua and is the module we are defining for use in file2.lua
+--[[
+--------------
+file1.lua
+local constants = {} -- this is a table that this file will build to be returned for use in the require("<library>") in file2.lua
+
+local function b(x) -- this wont be accessible from outside of this file
+   return x + 3
+end
+
+function constants.a(x) -- notice the name has a prefix of the table we defined at the start, this will be a something you can call outside of this file
+    return x + 1
+end
+
+return constants -- return the table we built up as the last statement in the file1.lua
+
+--------------
+file2.lua
+local constants = require("file1") -- here we are grabbing file1.lua and the thing that is returned is the constants table we created in file1.lua
+
+constants.a(2) => 3 -- this is how you would call the function we declared in file1.lua
+constants.b(3) => error -- this is will not work
+--]]
+
 --- Water tiles in game
 local waterTiles =
 {

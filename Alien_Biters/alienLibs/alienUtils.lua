@@ -1,5 +1,6 @@
 
-
+-- Veden Note
+-- Why are you deleting items from the array as you look for units?
 function killAlien(unitArray)
 	--writeDebug(unitArray)
     if unitArray ~= nil then
@@ -13,21 +14,32 @@ function killAlien(unitArray)
 	end
 end
 
+
+-- Veden Note
+-- the while loop can be replaced with a return statement
 function findValidUnit(unitArray)
-    local unit = nil
-    local i = 1
-    while (i < #unitArray) and (unit == nil) do
+    for i=1,#unitArray do
         local alien = unitArray[i]
-        if (alien ~= nil) then
-            if (alien.valid) then
-                unit = alien
-            else
-                unitArray[i] = nil
-            end
+        if (alien ~= nil) and alien.valid then
+	    return alien
         end
-        i = i + 1
     end
-    return unit
+    return nil -- if it can't find anything
+
+    -- local unit = nil
+    -- local i = 1
+    -- while (i < #unitArray) and (unit == nil) do
+    --     local alien = unitArray[i]
+    --     if (alien ~= nil) then
+    --         if (alien.valid) then
+    --             unit = alien
+    --         else
+    --             unitArray[i] = nil
+    --         end
+    --     end
+    --     i = i + 1
+    -- end
+    -- return unit
 end
 
 function euclideanDistance(p1, p2)
