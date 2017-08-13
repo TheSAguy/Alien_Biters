@@ -74,24 +74,25 @@ function Initial_Spawn(surface)
 		-- Still having an issue here, Aliens are still spwaning in water tiles. Thought 
 		-- I'd fix this issue by looking if the tile was a water tile and then preventing the spawn, 
 		-- but could not get "get_tile" to work
+		local Initial_Unit = { name="alien-army-26", position={pos_x, pos_y}, force = game.forces.alien}
 		
-		if surface.can_place_entity({ name="alien-army-26", position={pos_x, pos_y}, force = game.forces.alien}) then --and not waterTiles[currentTilename] then
+		if surface.can_place_entity(Initial_Unit) then --and not waterTiles[currentTilename] then
 					
-			local lords = surface.create_entity({name="alien-army-26", position={pos_x, pos_y},force = game.forces.alien})	
+			local lords = surface.create_entity(Initial_Unit)	
 			--global.Initial_Aliens[i] = lords
 			
 			Nest_Spawned = Nest_Spawned + 1
 			--global.Initial_Aliens[i] = lords
 			global.Initial_Aliens.count[Nest_Spawned] = lords -- I keep track of the initial units spawned, since I want to give them orders in the beginning of the game.
-			-- I could propably use "lords" instead of keeping track of it by itself...
+
 		
 			-- QC to look at spawned units.
-			--[[
+		--[[
 			--Reveal spawned unit
 			for _,force in pairs( game.forces )do
 				force.chart( surface, {{x = pos_x - chart_radius, y = pos_y - chart_radius}, {x = pos_x, y = pos_y}})
 			end			
-			]]
+		]]
 			
 			
 			Scatter = Scatter + 100

@@ -5,38 +5,54 @@ require "alienUtils"
 -- I have 5 tables below to help me determine certain actions. Can probably be optimized.
 
 -- Veden Note:
--- local Swarm_Count = {}
--- local ValidUpgrade = {}
--- local Alien_Upgrade_from_killing_Units = {}
--- local Alien_Upgrade_from_killing_Spawner = {}
--- local Death_Action = {}
--- for i=1,100 do
---     local alienArmyName = "alien-army-" .. i
---     ValidUpgrade[alienArmyName] = true
---     Alien_Upgrade_from_killing_Units[alienArmyName] = "alien-army-" .. (i + 1)
---     -- ...
---     local deathActionName
---     if (i < 10) then
--- 	deathActionName = "Nothing"
---     elseif (i < 26) then
--- 	deathActionName = "Swarm"
---     elseif (i < 41) then
--- 	deathActionName = "Breed"
---     elseif (i < 51) then
--- 	deathActionName = "Swarm"
---     -- ...
---     end
---     Death_Action[alienArmyName] = deathActionName
-
---     local swarmCountNumber
---     if (i < 10) then
--- 	swarmCountNumber = 0
---     else
--- 	swarmCountNumber = i - 10
---     Swarm_Count[alienArmyName] = swarmCountNumber
--- end
+local Swarm_Count = {}
+local ValidUpgrade = {}
+local Alien_Upgrade_from_killing_Units = {}
+local Alien_Upgrade_from_killing_Spawner = {}
+local Death_Action = {}
 
 
+for i=1,99 do
+     local alienArmyName = "alien-army-" .. i
+     
+	 ValidUpgrade[alienArmyName] = true
+     Alien_Upgrade_from_killing_Units[alienArmyName] = "alien-army-" .. (i + 1)
+     
+	 local num = (i + 3)
+	 if num > 100 then num = 100 end
+	 
+	 Alien_Upgrade_from_killing_Spawner[alienArmyName] = "alien-army-" .. num
+
+	 
+     local deathActionName
+     if (i < 10) then
+		deathActionName = "Nothing"
+     elseif (i < 26) then
+		deathActionName = "Swarm"
+     elseif (i < 41) then
+		deathActionName = "Breed"
+     elseif (i < 51) then
+		deathActionName = "Swarm"
+	 elseif (i < 61) then
+		deathActionName = "Explode"
+	 elseif (i < 86) then
+		deathActionName = "Swarm"
+	 else
+		deathActionName = "Breed_Swarm"
+     end
+   
+   Death_Action[alienArmyName] = deathActionName
+
+     local swarmCountNumber
+     if (i < 10) then
+		swarmCountNumber = 0
+     else
+		swarmCountNumber = i - 10
+		Swarm_Count[alienArmyName] = swarmCountNumber
+	end
+end
+
+--[[
 -- Upgrade Elegable
 local ValidUpgrade = 
     {
@@ -572,9 +588,11 @@ local Swarm_Count =
 
     }
 
-------------------------------
+]]
+	------------------------------
 -- So when an Alien kills a Enemy unit, the unit that does get raised as a alien unit and the Alien that did the killing also gets upgraded.
 -- One thing that I don't know how to do is remove units form "lords"
+
 -- Veden Note:
 -- depends on how you are storing units in the lords table
 -- if they are stored by unit number then
@@ -590,134 +608,159 @@ local Swarm_Count =
 
 function raisealien(event, Alien, surface)
     
-
-    local risenPosition = event.entity.position
-    local entityType = event.entity.type
-    local entityName = event.entity.name
+	local entity = event.entity
+    local risenPosition = entity.position
+    local entityType = entity.type
+    local entityName = entity.name
     local freeAliens = Alien.freeAliens
     
-    if (event.force ~= nil) and (event.force.name == "alien") and (event.entity.force.name == "enemy") then
+    if (event.force ~= nil) and (event.force.name == "alien") and (entity.force.name == "enemy") then
 	
+		local alienArmy = {name = "alien-army-1", position = risenPosition, force = "alien"}
 
-
-	--- If an Enemy Unit get's killed
-	if (entityType == "unit") then		
-
-	    -- Veden Note:
-	    -- if you notice you are using the same table in several places pull it into a variable instead of
-	    -- created two {name = "alien-army-1", position = risenPosition, force = "alien"} it reduces gc
-	    -- pressure and makes the code cleaner
-
-	    local alienArmy = {name = "alien-army-1", position = risenPosition, force = "alien"}
-
-	    -- Veden Note:
-	    -- Anytime you are placing units it is usually good to check if you can place the unit before
-	    -- creating them and if you can't place the unit use something like find_non_colliding_position
-	    -- with a small step
-	    
-	    if surface.can_place_entity(alienArmy) then
-		local risen = surface.create_entity(alienArmy)
-		freeAliens[#freeAliens+1] = risen
-		--
-		-- Upgrade the alien that did the killing of the Unit
-		if event.cause and event.cause.force.name == "alien" then
-		    
-		    local causeName = event.cause.name
-		    
-		    if ValidUpgrade[causeName] then
-
-			--writeDebug(entityName.. ", was killed by "..causeName.. " and raised as a alien-army-1")		
-			--writeDebug("The Killing was done by "..causeName)
-			Risen_alien = Alien_Upgrade_from_killing_Units[causeName]
-			event.cause.destroy()
+		--- If an Enemy Unit get's killed
+		if (entityType == "unit") then			   
 			
-			local risen = surface.create_entity({name = Risen_alien, position = risenPosition, force = "alien"})
+			if surface.can_place_entity(alienArmy) then
+				local risen = surface.create_entity(alienArmy)
+				freeAliens[#freeAliens+1] = risen		
+			else
+				local risenPosition_alt = event.entity.surface.find_non_colliding_position(entityName, risenPosition, 4 , 0.5)
+				local alienArmy_alt = {name = "alien-army-1", position = risenPosition_alt, force = "alien"}
+				
+				if surface.can_place_entity(alienArmy_alt) then
+					local risen = surface.create_entity(alienArmy_alt)
+					freeAliens[#freeAliens+1] = risen
+				else
+				
+					for _,force in pairs( game.forces )do
+						force.chart( surface, {{x = risenPosition_alt.x - 10, y = risenPosition_alt.y - 10}, {x = risenPosition_alt.x, y = risenPosition_alt.y}})
+					end	
+					writeDebug("Still could not find a spot to place the newly risen unit")
+				end
+			
+			end
+				
+			-- Upgrade the alien that did the killing of the Unit
+			if event.cause and event.cause.force.name == "alien" then
+				
+				local causeName = event.cause.name
+				
+				-- check to see if the Alien can be upgraded
+				if ValidUpgrade[causeName] then	
+					Risen_alien = Alien_Upgrade_from_killing_Units[causeName]
+					
+					if surface.can_place_entity({name=Risen_alien, position = event.cause.position, force = "alien"}) then
+						-- kill current unit 
+						event.cause.destroy()
+						-- create upgraded unit
+						local risen = surface.create_entity({name = Risen_alien, position = event.cause.position, force = "alien"})
+					else 
+							
+						local risenPosition_alt = event.entity.surface.find_non_colliding_position(Risen_alien, event.cause.position, 5 , 0.5)
+						local alienArmy_alt = {name = Risen_alien, position = risenPosition_alt, force = "alien"}
+						
+						if surface.can_place_entity(alienArmy_alt) then
+							event.cause.destroy()
+							local risen = surface.create_entity(alienArmy_alt)
 
-		    end
-		    
+						else
+							writeDebug("Still could not find a spot to place the newly risen unit")
+						end
+				
+					end
+			   
+				end 
+			end
+		--- If a Spawner get's killed
+		elseif (entityType == "unit-spawner") then
+
+			-- Raise 5 units if a spawner get's killed
+			risenPosition.x = risenPosition.x - 5
+			for i=1, 5 do
+		
+				if surface.can_place_entity(alienArmy) then
+					local risen = surface.create_entity(alienArmy)
+					freeAliens[#freeAliens+1] = risen
+				end
+				risenPosition.x = risenPosition.x + 1
+			
+			end
+			
+			-- Upgrade the alien unit that did the killing of the Spawner
+			if event.cause and event.cause.force.name == "alien" then		
+				-- The Evolution Factor gets affected when the Aliens kill nests, so I'm counteracting that here.	
+				--writeDebug("Alien killed an Enemy Spawner, so reduce the Evolution")
+				game.forces.enemy.evolution_factor = game.forces.enemy.evolution_factor - (game.map_settings.enemy_evolution.destroy_factor * (1-game.forces.enemy.evolution_factor)^2)	
+
+				local causeName = event.cause.name
+				
+				if ValidUpgrade[causeName] then
+
+					Risen_alien = Alien_Upgrade_from_killing_Spawner[causeName]		
+					
+					if surface.can_place_entity({name=Risen_alien, position = event.cause.position, force = "alien"}) then
+						-- kill current unit
+						event.cause.destroy()
+						-- create upgraded unit
+						local risen = surface.create_entity({name = Risen_alien, position = event.cause.position, force = "alien"})
+		
+					else
+						local risenPosition_alt = event.entity.surface.find_non_colliding_position(causeName, event.cause.position, 4 , 0.5)
+						local alienArmy_alt = {name = Risen_alien, position = risenPosition_alt, force = "alien"}
+						
+						if surface.can_place_entity(alienArmy_alt) then
+							event.cause.destroy()
+							local risen = surface.create_entity(alienArmy_alt)
+
+						else
+						writeDebug("Still could not find a spot to place the newly risen unit")
+						end
+					
+					end							
+
+				end
+			
+			end
+			
 		end
-	    end 
-	    --- If a Spawner get's killed
-	elseif (entityType == "unit-spawner") then
 
-	    writeDebug("An Alien Nest was destroyed")	
-	    -- Raise 5 units if a spawner get's killed
-	    risenPosition.x = risenPosition.x - 5
-	    for i=1, 5 do
-
-		
-		local risen = surface.create_entity({name = "alien-army-1", position = risenPosition, force = "alien"})
-		freeAliens[#freeAliens+1] = risen
-		risenPosition.x = risenPosition.x + 1
-		
-	    end
-	    --
-	    -- Upgrade the alienite that did the killing of the Spawner
-	    if event.cause and event.cause.force.name == "alien" then
-		
-		-- The Evolution Factor gets affected when the Aliens kill nests, so I'm counteracting that here.	
-		--writeDebug("Alien killed an Enemy Spawner, so reduce the Evolution")
-		game.forces.enemy.evolution_factor = game.forces.enemy.evolution_factor - (game.map_settings.enemy_evolution.destroy_factor * (1-game.forces.enemy.evolution_factor)^2)	
-
-		local causeName = event.cause.name
-		
-		if ValidUpgrade[causeName] then
-
-		    --writeDebug(entityName.. ", was killed by "..causeName.. " and raised as a alien-army-1")		
-		    --writeDebug("The Killing was done by "..causeName)
-		    Risen_alien = Alien_Upgrade_from_killing_Spawner[causeName]
-		    event.cause.destroy()			
-		    
-		    local risen = surface.create_entity({name = Risen_alien, position = risenPosition, force = "alien"})
-
+		if (#freeAliens > 10) then
+				Alien = formclans(Alien, surface)
 		end
 		
-	    end
-	    
-	end
-	--writeDebug("The number of Free Minions are: "..#freeAliens)	
-	--writeDebug("The Horde number is: "..#global.Total_Nest_Count)	
-	
-	if (#freeAliens > 10) then
-            Alien = formclans(Alien, surface)
-        end
-	
     end
 
     ---- If an Alien unit dies, what should happen:
     if (event.force ~= nil)  and (entityType == "unit")  and (event.entity.force.name == "alien") then 
 	
-	--writeDebug("A alien Died")	
-	local AlienName = event.entity.name
-	
-	if Death_Action[AlienName] == 'Swarm' then
-	    
-	    writeDebug("Swarm")	
-	    Alien_Swarm(event)
-	    
-	    
-	elseif Death_Action[AlienName] == 'Breed' then
-	    
-	    writeDebug("Breed")
-	    Spawn_Nest(event)
-	    
-	    
-	elseif Death_Action[AlienName] == 'Explode' then
-	    
-	    writeDebug("Explode")
-	    Explosion(event)
-	    
-	elseif Death_Action[AlienName] == 'Breed_Swarm' then
-	    
-	    writeDebug("Breed & Swarm")
-	    Spawn_Nest(event)
-	    Alien_Swarm(event)
-	    
-	else
-	    
-	    --writeDebug("Not in Death_Action table")
-	    
-	end
+		--writeDebug("A alien Died")	
+		local AlienName = event.entity.name
+		
+		if Death_Action[AlienName] == 'Swarm' then
+			
+			writeDebug("Swarm")	
+			Alien_Swarm(event)
+			
+			
+		elseif Death_Action[AlienName] == 'Breed' then
+			
+			writeDebug("Breed")
+			Spawn_Nest(event)
+			
+			
+		elseif Death_Action[AlienName] == 'Explode' then
+			
+			writeDebug("Explode")
+			Explosion(event)
+			
+		elseif Death_Action[AlienName] == 'Breed_Swarm' then
+			
+			writeDebug("Breed & Swarm")
+			Spawn_Nest(event)
+			Alien_Swarm(event)
+			
+		end
 	
     end
     
@@ -725,12 +768,17 @@ function raisealien(event, Alien, surface)
     if (event.force ~= nil)  and (entityType == "unit-spawner") and (event.entity.name == "alien-den")  then 
 	
 	Alien_Swarm(event)
-	global.Total_Nest_Count = global.Total_Nest_Count + 1
+	-- if an alien nest is destroyed, it releases a pollution cloud.
+	pollute = surface.surface.pollute(event.entity.position, 500)
+	global.Total_Nest_Count = global.Total_Nest_Count - 1
 	
     end
     
     return Alien
+
 end
+
+
 
 --- Need to improve my Explosions :)
 function Explosion(event)
@@ -743,12 +791,9 @@ end
 --- TO DO: possibly have different nests, depending on Evolution factor.
 function Spawn_Nest(event)
 
-    local SpawnAlienPosition = event.entity.surface.find_non_colliding_position(event.entity.name, event.entity.position, 4 , 0.5)
+    local SpawnAlienPosition = event.entity.surface.find_non_colliding_position(event.entity.name, event.entity.position, 8 , 1)
     local CanSpawn = surface.can_place_entity({ name="alien-den", position=SpawnAlienPosition, force = game.forces.alien})
 
-    --- Not sure how to prevent not getting a location that can't be used to spawn a spawner...
-    -- Veden note:
-    -- Sometimes this call will fail and there isn't anything to do about it, because there isn't any room to place an entity.
     if CanSpawn then
 	
 	
@@ -762,11 +807,14 @@ function Spawn_Nest(event)
 	
 	for _,force in pairs( game.forces )do
 	    force.chart( surface, {{x = SpawnAlienPosition.x - 10, y = SpawnAlienPosition.y - 10}, {x = SpawnAlienPosition.x, y = SpawnAlienPosition.y}})
-	end		
+	end	
+	
     else
 
 	writeDebug("Failed to find a Nest spawn location!")
-	
+		for _,force in pairs( game.forces )do
+			force.chart( surface, {{x = SpawnAlienPosition.x - 10, y = SpawnAlienPosition.y - 10}, {x = SpawnAlienPosition.x, y = SpawnAlienPosition.y}})
+		end	
     end
     
 end
@@ -775,10 +823,14 @@ end
 -- Swarn Larva  Aliens when an Alien dieds
 function Alien_Swarm(event)
     local AlienName = event.entity.name
-    --writeDebug("Alien Name: "..AlienName) 
-
-    local number = Swarm_Count[AlienName]
-
+    local number
+	
+	if event.entity.name == "alien-den" then 
+		number = 10
+	else
+		number = Swarm_Count[AlienName]
+	end
+	
     for i = 1, number do
 	local SpawnAlienPosition = event.entity.surface.find_non_colliding_position(AlienName, event.entity.position, 2 , 0.5)
 	if SpawnAlienPosition then
@@ -926,28 +978,29 @@ function moveclans(Alien, surface)
     repeat
         local clan = clans[clanIndex]
 	local target = nil
-        if (clan ~= nil) and (clan.valid) then
+        
+		if (clan ~= nil) and (clan.valid) then
 
-            local radius = 10 + 20 * game.forces.enemy.evolution_factor	
-	    local pos = clan.position		
-	    local area = {{pos.x - radius, pos.y - radius}, {pos.x + radius, pos.y + radius}}
-	    local spawner = clan.surface.find_entities_filtered({area = area, type = "unit-spawner", force= "enemy"})
-	    
-	    if #spawner > 0 then
-		--writeDebug("Found a Spawner in range")
-		
-		for _,enemy in pairs(spawner) do
-		    if target == nil then
-			target={enemy}
-		    end
-		end
-		
-	    end			
-	    if target ~= nil then
-		
-		clan.set_command({type = defines.command.attack, target = target[1]})
-		
-	    end
+			local radius = 10 + 20 * game.forces.enemy.evolution_factor	
+			local pos = clan.position		
+			local area = {{pos.x - radius, pos.y - radius}, {pos.x + radius, pos.y + radius}}
+			local spawner = clan.surface.find_entities_filtered({area = area, type = "unit-spawner", force= "enemy"})
+			
+			if #spawner > 0 then
+			--writeDebug("Found a Spawner in range")
+				
+				for _,enemy in pairs(spawner) do
+					if target == nil then
+					target={enemy}
+					end
+				end
+				
+			end			
+			if target ~= nil then
+			
+				clan.set_command({type = defines.command.attack, target = target[1]})
+			
+			end
 
         end
         clanIndex = clanIndex + 1

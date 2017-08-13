@@ -90,99 +90,88 @@ end
  
 -- Was thinking of to move the initial units (should probably include newly formed clans also) every 10 min, for maybe 10 times.
 -- then leave them till the player shows us. Or maybe just increase the time between moves to maybe make it incrimental 5, 10, 15....
-local counter = 0
+
 Event.register(defines.events.on_tick, function(event)	
 
 	
-    if (event.tick % 440 == 0) then
+    if (event.tick % 4400 == 0) then
 		
-	-- Veden Note:
-	-- not sure of the purpose of this counter loop
-	
-		if counter < 10 then
 
-		    -- Veden Note:
-		    -- doing this expanding radius is a bad idea within the on_tick as it is computationally intensive
-		    -- and I'm not sure why a single call at the max radius wouldn't suffice
 
 			local chart_radius = 10
 			local counts = global.Initial_Aliens.count
-			local InitialIndex = 1
-			local radius = 10
-			local pos = global.Initial_Aliens.count.positions
-
+			local radius = 20
 			-- Veden Note:
 			-- instead of doing all the counts at once, only do a fixed set and store were you leave off in global and start back up there. Once the stored index reaches the
 			-- max size start it back at 1
 			
-			repeat
-				
-				local count = counts[InitialIndex]		
+		
+			for i=1, #counts do	
+				writeDebug("i is currently "..i)
+				local count = counts[i]		
 				local target = nil
 					
 				if (count ~= nil) and (count.valid) then
 					local surface = count.surface			
 					local pos = count.position
-					-- Veden Note:
-					-- not sure why this is needed
+
 					local currentTilename = surface.get_tile(pos.x,pos.y).name
 				
 					
-					writeDebug(currentTilename)
+					--writeDebug(currentTilename)
 					-- Was trying to kill units spawned in water, could not get that to work.
-					--if waterTiles[currentTilename] then
-					--	count.destroy()
-					--end
+					if waterTiles[currentTilename] then
+						for _,force in pairs( game.forces )do
+						force.chart( surface, {{x = count.position.x - chart_radius, y = count.position.y - chart_radius}, {x = count.position.x, y = count.position.y}})
+						end	
+						--count.destroy()
+					end
 
 					-- Veden Note:
 					-- this is something that is going to be very expensive for lots of units. You may be better off figuring out a fixed point that is their home
 					-- and chart a radius around that once and keep the spread within that radius.
+					--[[
 					for _,force in pairs( game.forces )do
 						force.chart( surface, {{x = count.position.x - chart_radius, y = count.position.y - chart_radius}, {x = count.position.x, y = count.position.y}})
 					end	
-					
+					]]
 					local radius = radius + (20 * game.forces.enemy.evolution_factor)
-					local area = {{pos.x - radius, pos.y - radius}, {pos.x + radius, pos.y + radius}}
+					--local area = {{pos.x - radius, pos.y - radius}, {pos.x + radius, pos.y + radius}}
 					-- Veden Note:
 					-- find_nearest_enemy is more efficient than find_entities_filtered
-					local spawner = surface.find_entities_filtered({area = area, type = "unit-spawner", force= "enemy"})
-
+					
+					--local spawner = surface.find_entities_filtered({area = area, type = "unit-spawner", force= "enemy"})
+					local enemyX = surface.find_nearest_enemy({position=pos, max_distance=radius, force= "enemy"})
 					-- Veden Note:
 					-- Not sure for the water tile check.
 					-- why the loop, currently it loops through all the spawners and builds tables for each, but only actually uses the last one
-					if #spawner > 0 and not waterTiles[currentTilename] then
+					
+					if #enemyX > 0 then
 					writeDebug("Found a Spawner to attack")
 						
-						for _,enemy in pairs(spawner) do
+						for _,enemy in pairs(enemyX) do
 							if target == nil then
 								target={enemy}
 							end
 						end
 					
 					end			
+					
 					if (target ~= nil) and (count ~= nil) and (count.valid) then
 						
-						count.set_command({type = defines.command.attack, target = target[1]})
-						
+						count.set_command({type = defines.command.attack, target = target[1]})						
 					else
 					    count.set_command({type = defines.command.wander})
-
-					    -- Veden Note:
-					    -- Why are you increasing the radius?
-						radius = radius + 2 
+						
 					end
 				
 				
 				else
 					writeDebug("found invalid one")
 				end
-				
-			
-				InitialIndex = InitialIndex + 1
-			until (InitialIndex >= #counts)
 
-			counter = counter + 1
-		end	
+			end
+
     end
 end)
 
